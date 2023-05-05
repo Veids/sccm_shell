@@ -1,0 +1,58 @@
+import argparse
+import cmd2
+from cmd2 import CommandSet, with_default_category, ansi
+
+from lib.SCCMApplications import SCCMApplications
+from lib.Common import print_data
+
+@with_default_category('Applications')
+class SCCMApplicationsCMD(CommandSet):
+    def __init__(self, iWbemServices):
+        super().__init__()
+
+        self.applications = SCCMApplications(iWbemServices)
+
+    add_application_parser = cmd2.Cmd2ArgumentParser()
+    add_application_parser.add_argument('-s', '--siteCode', action = 'store', type = str, required = True)
+    add_application_parser.add_argument('-an', '--applicationName', action = 'store', type = str, required = True, help = 'Name of the application')
+    add_application_parser.add_argument('-p', '--path', action = 'store', type = str, required = True, help = 'Executable pass or command string with arguments')
+    add_application_parser.add_argument('-r', '--runUser', action = 'store', type = str, required = True, choices = ["User", "System"], help = 'Run command on behalf of the user/system')
+    add_application_parser.add_argument('--show', action = 'store', type = bool, default = False, help = "Don't hide an application from CCM console")
+
+    @cmd2.as_subcommand_to('add', 'application', add_application_parser)
+    def add_application(self, ns: argparse.Namespace):
+        self.applications.add(ns.siteCode, ns.applicationName, ns.path, ns.runUser, ns.show)
+
+
+    get_application_parser = cmd2.Cmd2ArgumentParser()
+    get_application_parser.add_argument('-n', '--applicationName', action = 'store', type = str, default = None, help = 'LocalizedDisplayName')
+    get_application_parser.add_argument('-p', '--property', action = 'append', type = str, default = None, help = 'Property to output')
+
+    @cmd2.as_subcommand_to('get', 'application', get_application_parser)
+    def get_application(self, ns: argparse.Namespace):
+        def format_column(property):
+            value = property["value"]
+            if value is None:
+                return value
+
+            if property["name"] == "ExecutionContext":
+                return f"{value} (User)" if value else f"{value} (System)"
+            return value
+
+        applications = self.applications.get(ns.applicationName, ns.property)
+        print_data(applications, format_column)
+
+
+    get_application_xml_parser = cmd2.Cmd2ArgumentParser()
+    get_application_xml_parser.add_argument('-ci', '--ciID', action = 'store', type = str, required = True, help = 'CI_ID')
+
+    @cmd2.as_subcommand_to('get', 'application-xml', get_application_xml_parser)
+    def get_application_xml(self, ns: argparse.Namespace):
+        print(self.applications.get_xml(ns.ciID))
+
+    del_application_parser = cmd2.Cmd2ArgumentParser()
+    del_application_parser.add_argument('-ci', '--ciID', action = 'store', type = str, required = True, help = 'CI_ID')
+
+    @cmd2.as_subcommand_to('del', 'application', del_application_parser)
+    def del_application(self, ns: argparse.Namespace):
+        self.applications.remove(ns.ciID)

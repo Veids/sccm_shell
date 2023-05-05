@@ -1,0 +1,4 @@
+impacket
+cmd2
+jinja2
+uuid
