@@ -52,20 +52,32 @@ class WMIFunction:
             print(f"[+] {banner} - OK")
         return resp
 
+print_conf = {
+    "table": True
+}
+
 def print_data(managementObjects, columnFormatter = lambda x: x["value"]):
     if len(managementObjects):
-        n = len(managementObjects[0].getProperties())
-        if n < 10:
-            max_width = int(180 / len(managementObjects[0].getProperties()))
+        if print_conf["table"]:
+            n = len(managementObjects[0].getProperties())
+            if n < 10:
+                max_width = int(180 / len(managementObjects[0].getProperties()))
+            else:
+                max_width = 20
+
+            columns = [Column(x, width = max_width) for x in managementObjects[0].getProperties().keys()]
+            data_list: List[List[Any]] = [[columnFormatter(prop) for prop in x.getProperties().values()] for x in managementObjects]
+
+            st = SimpleTable(columns)
+            table = st.generate_table(data_list)
+            ansi_print(table)
         else:
-            max_width = 20
-
-        columns = [Column(x, width = max_width) for x in managementObjects[0].getProperties().keys()]
-        data_list: List[List[Any]] = [[columnFormatter(prop) for prop in x.getProperties().values()] for x in managementObjects]
-
-        st = SimpleTable(columns)
-        table = st.generate_table(data_list)
-        ansi_print(table)
+            for obj in managementObjects:
+                header = f"===== {obj.getClassName()} ====="
+                print(header)
+                for k, v in obj.getProperties().items():
+                    print("%s - %s" % (k, columnFormatter(v)))
+                print("=" * len(header))
     else:
         print("[!] Empty response")
 

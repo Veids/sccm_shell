@@ -28,6 +28,12 @@ from cmds.SCCMSettingsCMD import SCCMSettingsCMD
 from cmds.SCCMCollectionsCMD import SCCMCollectionsCMD
 from cmds.SCCMPoliciesCMD import SCCMPoliciesCMD
 from cmds.SCCMDeploymentsCMD import SCCMDeploymentsCMD
+from cmds.SCCMScriptsCMD import SCCMScriptsCMD
+from cmds.SCCMOperationsCMD import SCCMOperationsCMD
+from cmds.PrintSettingsCMD import PrintSettingsCMD
+from cmds.WMIQueryCMD import WMIQueryCMD
+
+import lib.Common as Common
 
 class SCCM(cmd2.Cmd):
     def __init__(self, *args, **kwargs):
@@ -87,7 +93,21 @@ class SCCM(cmd2.Cmd):
         else:
             # No subcommand was provided, so call help
             self.poutput('This command does nothing without sub-parsers registered')
-            self.do_help('del')
+            self.do_help('update')
+
+    settings_parser = cmd2.Cmd2ArgumentParser()
+    settings_subparsers = settings_parser.add_subparsers(title='entity', help='Tool configuration')
+
+    @with_argparser(settings_parser)
+    def do_settings(self, ns: argparse.Namespace):
+        handler = ns.cmd2_handler.get()
+        if handler is not None:
+            # Call whatever subcommand function was selected
+            handler(ns)
+        else:
+            # No subcommand was provided, so call help
+            self.poutput('This command does nothing without sub-parsers registered')
+            self.do_help('settings')
 
 def load_smbclient_auth_file(path):
     '''Load credentials from an smbclient-style authentication file (used by
@@ -144,7 +164,11 @@ def main(address, username='', password='', domain='', hashes=None, aesKey=None,
             SCCMRulesCMD(iWbemServices),
             SCCMApplicationsCMD(iWbemServices),
             SCCMPoliciesCMD(iWbemServices),
-            SCCMDeploymentsCMD(iWbemServices)
+            SCCMDeploymentsCMD(iWbemServices),
+            SCCMScriptsCMD(iWbemServices),
+            SCCMOperationsCMD(iWbemServices),
+            WMIQueryCMD(iWbemServices),
+            PrintSettingsCMD(),
         ])
         if cmds:
             for x in cmds:

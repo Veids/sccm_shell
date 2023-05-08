@@ -21,13 +21,13 @@ class SCCMDeployments(WMIFunction):
         deployment.CollectionName = collectionName
         deployment.DesiredConfigType = 1 # Required
         deployment.DisableMOMAlerts = True
-        # deployment.EnforcementDeadline = now
+        deployment.EnforcementDeadline = now
         deployment.LogComplianceToWinEvent = False
         deployment.NotifyUser = False
-        # deployment.OfferFlags = 1 # Predeploy
+        deployment.OfferFlags = 1 # Predeploy
         deployment.OfferTypeID = 0 # Required
         deployment.OverrideServiceWindows = True
-        # deployment.Priority = 2 # High
+        deployment.Priority = 2 # High
         deployment.RebootOutsideOfServiceWindows = False
         deployment.SoftDeadlineEnabled = True
         deployment.SourceSite = siteCode
@@ -37,17 +37,7 @@ class SCCMDeployments(WMIFunction):
         deployment.UserUIExperience = False # Do not display user notifications
         deployment.WoLEnabled = False # Not including this property results in errors displayed in the console
         deployment.AssignedCIs = applicationCIID
-
-        deployment.Priority = 1
-        # deployment.UpdateDeadline = 'None'
-
-        # deployment.Enabled = True
-        # deployment.EnforcementDeadline = 'None'
-        # deployment.EvaluationSchedule = 'None'
-        # deployment.ExpirationTime = 'None'
-        # deployment.LastModificationTime = 'None'
-
-        deployment.OfferTypeID = 2
+        deployment.RequireApproval = False
 
         return self.checkiWbemResponse(
             f"Creating new {deployment.AssignmentName} deployment",
