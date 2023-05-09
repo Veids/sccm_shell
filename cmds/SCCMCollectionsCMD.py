@@ -1,19 +1,8 @@
 import argparse
-from datetime import datetime
 import cmd2
 from cmd2 import CommandSet, with_default_category
 
-from typing import (
-    Any,
-    List,
-)
-
-from cmd2.table_creator import (
-    Column,
-    SimpleTable,
-)
-
-from lib.Common import print_data, ansi_print
+from lib.Common import print_data
 from lib.SCCMCollections import SCCMCollections
 
 @with_default_category('Collections')
@@ -24,27 +13,26 @@ class SCCMCollectionsCMD(CommandSet):
         self.proxy = SCCMCollections(iWbemServices)
 
     @staticmethod
-    def format_column(property):
-        value = property['value']
-        if value is None:
-            return value
+    def customFormatter(prop, obj):
+        value = prop['value']
 
-        if property['stype'] == 'datetime':
-            return datetime.strptime(value.split('.')[0], "%Y%m%d%H%M%S")
-        if property['name'] == "CollectionType":
+        if prop['name'] == "CollectionType":
             return f"{value} ({SCCMCollections.collectionTypeToStr(value)})"
-        return value
 
+        if prop['name'] == "CollectionRules":
+            return str([", ".join(["%s: %s" % (ruleProp['name'], ruleProp['value']) for ruleProp in ruleObj.getProperties().values()]) for ruleObj in obj.CollectionRules])
+
+        return value
 
     get_collections_parser = cmd2.Cmd2ArgumentParser()
     get_collections_parser.add_argument('-n', '--collectionName', action = 'store', type = str, default = None, help = 'Name of the collection')
-    get_collections_parser.add_argument('-i', '--collectionID', action = 'store', type = str, default = None, help = 'ID of the collection')
+    get_collections_parser.add_argument('-ci', '--collectionID', action = 'store', type = str, default = None, help = 'ID of the collection')
     get_collections_parser.add_argument('-p', '--property', action = 'append', type = str, default = None, help = 'Property to output')
 
     @cmd2.as_subcommand_to('get', 'collection', get_collections_parser)
     def get_collection(self, ns: argparse.Namespace):
         collections = self.proxy.get(ns.collectionName, ns.collectionID, ns.property)
-        print_data(collections, self.format_column)
+        print_data(collections, self.customFormatter)
 
 
     add_collection_parser = cmd2.Cmd2ArgumentParser()
@@ -57,7 +45,7 @@ class SCCMCollectionsCMD(CommandSet):
 
 
     add_collection_membership_rule_parser = cmd2.Cmd2ArgumentParser()
-    add_collection_membership_rule_parser.add_argument('-i', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
+    add_collection_membership_rule_parser.add_argument('-ci', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
     add_collection_membership_rule_parser.add_argument('-ri', '--resourceID', action = 'store', type = str, required = True, help = 'ID of the resource')
     add_collection_membership_rule_parser.add_argument('-n', '--ruleName', action = 'store', type = str, required = True, help = 'Name of the rule')
 
@@ -67,7 +55,7 @@ class SCCMCollectionsCMD(CommandSet):
 
 
     del_collection_membership_rule_parser = cmd2.Cmd2ArgumentParser()
-    del_collection_membership_rule_parser.add_argument('-i', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
+    del_collection_membership_rule_parser.add_argument('-ci', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
     del_collection_membership_rule_parser.add_argument('-qi', '--queryID', action = 'store', type = int, required = True, help = 'ID of the query')
 
     @cmd2.as_subcommand_to('del', 'collection-membership-rule', del_collection_membership_rule_parser)
@@ -76,7 +64,7 @@ class SCCMCollectionsCMD(CommandSet):
 
 
     del_collections_parser = cmd2.Cmd2ArgumentParser()
-    del_collections_parser.add_argument('-i', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
+    del_collections_parser.add_argument('-ci', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
 
     @cmd2.as_subcommand_to('del', 'collection', del_collections_parser)
     def del_collections(self, ns: argparse.Namespace):
@@ -86,38 +74,19 @@ class SCCMCollectionsCMD(CommandSet):
     get_collection_rules_parser = cmd2.Cmd2ArgumentParser()
     get_collection_rules_group = get_collection_rules_parser.add_mutually_exclusive_group(required=True)
     get_collection_rules_group.add_argument('-n', '--collectionName', action = 'store', type = str, default = None, help = 'Name of the collection')
-    get_collection_rules_group.add_argument('-i', '--collectionID', action = 'store', type = str, default = None, help = 'ID of the collection')
+    get_collection_rules_group.add_argument('-ci', '--collectionID', action = 'store', type = str, default = None, help = 'ID of the collection')
 
     @cmd2.as_subcommand_to('get', 'collection-rules', get_collection_rules_parser)
     def get_collection_rules(self, ns: argparse.Namespace):
         collection = self.proxy.get_non_lazy(ns.collectionID)
-
-        columns = [
-            Column("CollectionID"),
-            Column("Name", width = 20),
-            Column("CollectionRules", width = 90),
-            Column("MemberCount")
-        ]
-
-        if collection.CollectionRules:
-            rules = [", ".join(["%s: %s" % (ruleProp['name'], ruleProp['value']) for ruleProp in ruleObj.getProperties().values()]) for ruleObj in collection.CollectionRules]
-        else:
-            rules = None
-
-        data_list: List[List[Any]] = list()
-        data_list.append(
-            [collection.CollectionID, collection.Name, rules, collection.MemberCount]
-        )
-
-        st = SimpleTable(columns)
-        table = st.generate_table(data_list)
-        ansi_print(table)
+        columns = ["CollectionID", "Name", "CollectionRules", "MemberCount"]
+        print_data([collection], self.customFormatter, columns)
 
 
     get_collection_members_parser = cmd2.Cmd2ArgumentParser()
-    get_collection_members_parser.add_argument('-i', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
+    get_collection_members_parser.add_argument('-ci', '--collectionID', action = 'store', type = str, required = True, help = 'ID of the collection')
 
     @cmd2.as_subcommand_to('get', 'collection-members', get_collection_members_parser)
     def get_collection_members(self, ns: argparse.Namespace):
         members = self.proxy.get_members(ns.collectionID)
-        print_data(members, self.format_column)
+        print_data(members, self.customFormatter)

@@ -1,12 +1,9 @@
 from base64 import b64encode
 import uuid
 
-from typing import (
-    Any,
-    List,
-)
+from typing import List
 
-from lib.Common import WMIFunction
+from lib.Common import WMIFunction, log
 
 class SCCMScripts(WMIFunction):
     def __init__(self, iWbemServices):
@@ -17,7 +14,7 @@ class SCCMScripts(WMIFunction):
 
     def gets(self, properties = None):
         if properties is None:
-            properties = ["ScriptGuid", "ScriptName", "ScriptVersion", "Author", "ScriptType", "ApprovalState"]
+            properties = ["ScriptGuid", "ScriptName", "ScriptVersion", "Author", "ScriptType", "ApprovalState", "Approver"]
 
         return self.get_class_instances("SMS_Scripts", properties = properties)
 
@@ -50,9 +47,9 @@ class SCCMScripts(WMIFunction):
         )
 
         if resp.ReturnValue == 0:
-            print(f"[+] Successfully created script {guid}")
+            log.info(f"Successfully created script {guid}")
         else:
-            print(f"[-] Failed to create a script")
+            log.error(f"Failed to create a script")
         return resp
 
     def remove(self, scriptGuid: str):
@@ -71,16 +68,16 @@ class SCCMScripts(WMIFunction):
         obj.RemRelease()
 
         if resp.ReturnValue == 0:
-            print(f"[+] Successfully approved script {scriptGuid}")
+            log.info(f"Successfully approved script {scriptGuid}")
         else:
-            print(f"[-] Failed to approve a script")
+            log.error(f"Failed to approve a script")
         return resp
 
     #creds - https://gist.github.com/Robert-LTH/7423e418aab033d114d7c8a2df99246b
     def run(self, scriptGuid: str, collectionID: str = '', resourceIDs: List[int] = []):
         script = self.get(scriptGuid)
         if script.ApprovalState != 3:
-            print(f"[-] Script {scriptGuid} is not approved, current state: {obj.ApprovalState}")
+            log.error(f"Script {scriptGuid} is not approved, current state: {obj.ApprovalState}")
             return None
 
         param =  "<ScriptContent ScriptGuid='{0}'><ScriptVersion>{1}</ScriptVersion><ScriptType>{2}</ScriptType><ScriptHash ScriptHashAlg='SHA256'>{3}</ScriptHash>{4}<ParameterGroupHash ParameterHashAlg='SHA256'></ParameterGroupHash></ScriptContent>".format(script.ScriptGuid, script.ScriptVersion, script.ScriptType, script.ScriptHash, "<ScriptParameters></ScriptParameters>")
@@ -96,7 +93,7 @@ class SCCMScripts(WMIFunction):
         )
 
         if resp.ReturnValue == 0:
-            print(f"[+] Operation successfully initiated {resp.OperationID}")
+            log.info(f"Operation successfully initiated {resp.OperationID}")
         else:
-            print(f"[-] Failed to initiate an operation")
+            log.error(f"Failed to initiate an operation")
         return resp

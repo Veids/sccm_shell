@@ -1,6 +1,6 @@
 import random
 
-from lib.Common import WMIFunction
+from lib.Common import WMIFunction, log
 
 class SCCMCollections(WMIFunction):
     def __init__(self, iWbemServices):
@@ -91,7 +91,7 @@ class SCCMCollections(WMIFunction):
             elif collectionTypeStr == "Device":
                 targetClass = "SMS_R_System"
             else:
-                print(f"[-] Unsupported collection type {collection.CollectionType}")
+                log.error(f"Unsupported collection type {collection.CollectionType}")
                 return None
 
             query = f"SELECT * FROM {targetClass} WHERE ResourceID='{resourceID}'"
@@ -104,17 +104,17 @@ class SCCMCollections(WMIFunction):
 
             resp = collectionRule.ValidateQuery(query)
             if resp.ReturnValue == "False":
-                print(f"[-] Specified query is not valid: {query}")
+                log.error(f"Specified query is not valid: {query}")
                 return
 
             resp = collection.AddMembershipRule(collectionRule)
             if resp.ReturnValue == 0:
-                print(f"[+] Membership rule successfully added to collection {collectionID}")
+                log.info(f"Membership rule successfully added to collection {collectionID}")
             else:
-                print(f"[-] Failed to add membership rule to collection {collectionID}")
+                log.error(f"Failed to add membership rule to collection {collectionID}")
             return resp
         else:
-            print("[-] Specified collection is not found")
+            log.error("Specified collection is not found")
             return None
 
     def del_membership_rule(self, collectionID: str, queryID: int):
@@ -130,10 +130,10 @@ class SCCMCollections(WMIFunction):
                 if rule.QueryID == queryID:
                     resp = collection.DeleteMembershipRule(rule)
                     if resp.ReturnValue == 0:
-                        print(f"[+] Query {queryID} from collection {collectionID} is removed")
+                        log.info(f"Query {queryID} from collection {collectionID} has been removed")
                     else:
-                        print(f"[-] Failed to remove query {queryID} from collection {collectionID}")
+                        log.error(f"Failed to remove query {queryID} from collection {collectionID}")
                     return resp
         else:
-            print("[-] Specified collection is not found")
+            log.error("Specified collection is not found")
             return None

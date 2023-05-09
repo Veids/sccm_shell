@@ -15,10 +15,11 @@ class SCCMDevicesCMD(CommandSet):
     get_device_parser = cmd2.Cmd2ArgumentParser()
     get_device_parser.add_argument('-u', '--userName', action = 'store', type = str, default = None, help = 'LastLogonUserName')
     get_device_parser.add_argument('-nb', '--netbiosName', action = 'store', type = str, default = None, help = 'Device NetbiosName')
+    get_device_parser.add_argument('-p', '--property', action = 'append', type = str, default = None, help = 'Property to output')
 
     @cmd2.as_subcommand_to('get', 'device', get_device_parser)
     def get_device(self, ns: argparse.Namespace):
-        devices = self.devices.get(ns.userName, ns.netbiosName)
+        devices = self.devices.get(ns.userName, ns.netbiosName, ns.property)
         print_data(devices)
 
     get_primary_device_parser = cmd2.Cmd2ArgumentParser()

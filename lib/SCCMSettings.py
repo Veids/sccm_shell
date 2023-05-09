@@ -1,4 +1,4 @@
-from lib.Common import WMIFunction
+from lib.Common import WMIFunction, log
 
 class SCCMSettings(WMIFunction):
     SCCMFILTERS = {
@@ -23,16 +23,16 @@ class SCCMSettings(WMIFunction):
         for x in objects:
             if x.PropertyName == "SETTINGS":
                 if x.Value1 == "Active":
-                    print("[I] Automatic site-wide client push installation is enabled")
+                    log.info("Automatic site-wide client push installation is enabled")
                 else:
-                    print("[I] Automatic site-wide client push installation is not enabled")
+                    log.info("Automatic site-wide client push installation is not enabled")
             elif x.PropertyName == "ENABLEKERBEROSCHECK":
                 if x.Value == 3:
-                    print("[I] Fallback to NTLM is enabled")
+                    log.info("Fallback to NTLM is enabled")
             elif x.PropertyName == "FILTERS":
-                print("[I] Install client software on the following computers:")
+                log.info("Install client software on the following computers:")
                 if x.Value in self.SCCMFILTERS:
-                    print(f"\t{self.SCCMFILTERS[x.Value]}")
+                    log.info(f"\t{self.SCCMFILTERS[x.Value]}")
 
         query = "SELECT Values FROM SMS_SCI_SCPropertyList WHERE PropertyListName='Reserved2'"
         objects = self.get_class_instances_raw(query)
@@ -40,17 +40,17 @@ class SCCMSettings(WMIFunction):
             for x in objects:
                 if x.Values is not None and len(x.Values) != 0:
                     for value in x.Values:
-                        print(f"[I] Discovered client push installation account: {value}")
+                        log.info(f"Discovered client push installation account: {value}")
                 else:
-                    print("[I] No client push installation accounts were configured, but the server may still use its machine account")
+                    log.info("No client push installation accounts were configured, but the server may still use its machine account")
         else:
-            print("[I] No client push installation accounts were configured, but the server may still use its machine account")
+            log.info("No client push installation accounts were configured, but the server may still use its machine account")
 
         query = "SELECT * FROM SMS_SCI_SQLTask WHERE ItemName='Clear Undiscovered Clients'"
         objects = self.get_class_instances_raw(query)
 
         for x in objects:
             if x.Enabled == "True":
-                print(f"[I] [{x.SiteCode}] The client installed flag is automatically cleared on inactive clients after {x['DeleteOlderThan']} days, resulting in reinstallation if automatic site-wide client push installation is enabled")
+                log.info(f"[{x.SiteCode}] The client installed flag is automatically cleared on inactive clients after {x['DeleteOlderThan']} days, resulting in reinstallation if automatic site-wide client push installation is enabled")
             else:
-                print(f"[I] [{x.SiteCode}] The client installed flag is not automatically cleared on inactive clients, preventing automatic reinstallation")
+                log.info(f"[{x.SiteCode}] The client installed flag is not automatically cleared on inactive clients, preventing automatic reinstallation")

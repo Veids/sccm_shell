@@ -3,7 +3,7 @@ import cmd2
 from cmd2 import CommandSet, with_default_category, ansi
 
 from lib.SCCMApplications import SCCMApplications
-from lib.Common import print_data
+from lib.Common import print_data, console
 
 @with_default_category('Applications')
 class SCCMApplicationsCMD(CommandSet):
@@ -30,17 +30,16 @@ class SCCMApplicationsCMD(CommandSet):
 
     @cmd2.as_subcommand_to('get', 'application', get_application_parser)
     def get_application(self, ns: argparse.Namespace):
-        def format_column(property):
-            value = property["value"]
-            if value is None:
-                return value
+        def columnFormatter(prop, obj):
+            value = prop["value"]
 
-            if property["name"] == "ExecutionContext":
+            if prop["name"] == "ExecutionContext":
                 return f"{value} (User)" if value else f"{value} (System)"
+
             return value
 
         applications = self.applications.get(ns.applicationName, ns.property)
-        print_data(applications, format_column)
+        print_data(applications, columnFormatter)
 
 
     get_application_xml_parser = cmd2.Cmd2ArgumentParser()
@@ -48,7 +47,7 @@ class SCCMApplicationsCMD(CommandSet):
 
     @cmd2.as_subcommand_to('get', 'application-xml', get_application_xml_parser)
     def get_application_xml(self, ns: argparse.Namespace):
-        print(self.applications.get_xml(ns.ciID))
+        console.print(self.applications.get_xml(ns.ciID))
 
     del_application_parser = cmd2.Cmd2ArgumentParser()
     del_application_parser.add_argument('-ci', '--ciID', action = 'store', type = str, required = True, help = 'CI_ID')

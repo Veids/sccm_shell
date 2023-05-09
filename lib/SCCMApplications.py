@@ -1,7 +1,7 @@
 import uuid
 from jinja2 import Environment, FileSystemLoader
 
-from lib.Common import WMIFunction
+from lib.Common import WMIFunction, log
 
 class SCCMApplications(WMIFunction):
     def __init__(self, iWbemServices):
@@ -46,7 +46,7 @@ class SCCMApplications(WMIFunction):
         whereCond = f"LocalizedDisplayName='{name}'" if name else None
 
         if properties is None:
-            properties = ["CI_ID","LocalizedDisplayName", "ExecutionContext", "IsEnabled", "IsDeployed", "IsHidden", "CreatedBy", "LastModifiedBy", "HasContent"]
+            properties = ["CI_ID","LocalizedDisplayName", "ExecutionContext", "IsEnabled", "IsDeployed", "IsHidden", "CreatedBy", "LastModifiedBy", "HasContent", "DateLastModified"]
 
         return self.get_class_instances("SMS_Application", properties = properties, where = whereCond)
 
@@ -61,9 +61,9 @@ class SCCMApplications(WMIFunction):
             application = applications[0]
             resp = application.SetIsExpired(True)
             if resp.ReturnValue == 0:
-                print(f"[+] Set application {ciID} expired state")
+                log.info(f"Set application {ciID} expired state")
             else:
-                print(f"[-] Failed to set application {ciID} expired state. Aborting...")
+                log.error(f"Failed to set application {ciID} expired state. Aborting...")
                 return None
 
             return self.checkiWbemResponse(
@@ -71,4 +71,5 @@ class SCCMApplications(WMIFunction):
                 self.iWbemServices.DeleteInstance(f"SMS_Application.CI_ID={ciID}")
             )
         else:
-            print(f"[-] Found {len(applications)} with CI_ID {ciID}")
+            log.error(f"Application {ciID} is not found")
+            return None

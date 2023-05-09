@@ -4,7 +4,7 @@ class SCCMDevices(WMIFunction):
     def __init__(self, iWbemServices):
         self.iWbemServices = iWbemServices
 
-    def get(self, userName = None, netbiosName = None):
+    def get(self, userName = None, netbiosName = None, properties = None):
         whereCond = []
         if userName:
             whereCond.append(f"LastLogonUserName='{userName}'")
@@ -17,7 +17,10 @@ class SCCMDevices(WMIFunction):
         else:
             whereCond = None
 
-        return self.get_class_instances("SMS_R_System", properties = ["ResourceID", "NetbiosName", "LastLogonUserName", "LastLogonTimestamp", "ResourceNames"], where = whereCond)
+        if properties is None:
+            properties = ["Active", "Client", "ClientType", "ResourceID", "NetbiosName", "LastLogonUserName", "LastLogonTimestamp", "ResourceNames"]
+
+        return self.get_class_instances("SMS_R_System", properties = properties, where = whereCond)
 
     def get_primary(self, userName = None, resourceID = None, resourceName = None):
         whereCond = None

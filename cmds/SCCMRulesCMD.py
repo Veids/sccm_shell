@@ -1,18 +1,6 @@
-from datetime import datetime
 import argparse
 import cmd2
-import sys
 from cmd2 import CommandSet, with_default_category, ansi
-
-from typing import (
-    Any,
-    List,
-)
-
-from cmd2.table_creator import (
-    Column,
-    SimpleTable,
-)
 
 from lib.SCCMRules import SCCMRules
 from lib.Common import print_data

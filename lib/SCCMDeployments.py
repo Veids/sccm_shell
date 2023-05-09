@@ -58,7 +58,7 @@ class SCCMDeployments(WMIFunction):
             whereCond = None
 
         if properties is None:
-            properties = ["ApplicationName", "Enabled", "CollectionName", "TargetCollectionID", "NotifyUser", "RequireApproval"]
+            properties = ["ApplicationName", "Enabled", "CollectionName", "TargetCollectionID", "NotifyUser", "RequireApproval", "LastModificationTime", "EnforcementDeadline", "AssignmentID"]
 
         return self.get_class_instances("SMS_ApplicationAssignment", properties = properties, where = whereCond)
 

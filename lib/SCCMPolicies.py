@@ -1,4 +1,4 @@
-from lib.Common import WMIFunction
+from lib.Common import WMIFunction, log
 
 class SCCMPolicies(WMIFunction):
     def __init__(self, iWbemServices):
@@ -12,4 +12,9 @@ class SCCMPolicies(WMIFunction):
             0,
             resourceIDs
         )
-        print(f"[?] Request status - {resp.ReturnValue}")
+
+        if resp.ReturnValue == 0:
+            log.info(f"Operation successfully initiated {resp.OperationID}")
+        else:
+            log.error(f"Failed to initiate an operation")
+        return resp
