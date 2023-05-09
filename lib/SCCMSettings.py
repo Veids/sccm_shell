@@ -17,7 +17,7 @@ class SCCMSettings(WMIFunction):
         self.iWbemServices = iWbemServices
 
     def show_site_push_settings(self):
-        query = "SELECT PropertyName, Value, Value1 FROM SMS_SCI_SCProperty WHERE ItemType='SMS_DISCOVERY_DATA_MANAGER' AND (PropertyName='ENABLEKERBEROSCHECK' OR PropertyName='FILTERS' OR PropertyName='SETTINGS')"
+        query = "SELECT PropertyName, Value, Value1 FROM SMS_SCI_SCProperty WHERE (ItemType='SMS_DISCOVERY_DATA_MANAGER' OR ItemType='Site Definition') AND (PropertyName='ENABLEKERBEROSCHECK' OR PropertyName='FILTERS' OR PropertyName='SETTINGS' OR PropertyName='Full Version')"
         objects = self.get_class_instances_raw(query)
 
         for x in objects:
@@ -33,16 +33,22 @@ class SCCMSettings(WMIFunction):
                 log.info("Install client software on the following computers:")
                 if x.Value in self.SCCMFILTERS:
                     log.info(f"\t{self.SCCMFILTERS[x.Value]}")
+            elif x.PropertyName == "Full Version":
+                log.info(f"Full version: {x.Value1}")
 
-        query = "SELECT Values FROM SMS_SCI_SCPropertyList WHERE PropertyListName='Reserved2'"
+        query = "SELECT PropertyListName, Values FROM SMS_SCI_SCPropertyList WHERE PropertyListName='Reserved2' OR PropertyListName='Databases'"
         objects = self.get_class_instances_raw(query)
         if len(objects):
             for x in objects:
-                if x.Values is not None and len(x.Values) != 0:
-                    for value in x.Values:
-                        log.info(f"Discovered client push installation account: {value}")
-                else:
-                    log.info("No client push installation accounts were configured, but the server may still use its machine account")
+                if x.PropertyListName == "Reserved2":
+                    if x.Values is not None and len(x.Values) != 0:
+                        for value in x.Values:
+                            log.info(f"Discovered client push installation account: {value}")
+                    else:
+                        log.info("No client push installation accounts were configured, but the server may still use its machine account")
+                elif x.PropertyListName == "Databases":
+                    if x.Values is not None and len(x.Values) != 0:
+                        log.info(f"Discovered databases in use: {x.Values}")
         else:
             log.info("No client push installation accounts were configured, but the server may still use its machine account")
 

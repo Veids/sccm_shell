@@ -74,7 +74,10 @@ def columnFormatter(prop, obj, customFormatter = None):
         return str(value)
 
     if prop['stype'] == 'datetime':
-        return str(datetime.strptime(value.split('.')[0], "%Y%m%d%H%M%S"))
+        try:
+            return str(datetime.strptime(value.split('.')[0], "%Y%m%d%H%M%S"))
+        except Exception:
+            return str(value)
 
     if customFormatter:
         res = customFormatter(prop, obj)
